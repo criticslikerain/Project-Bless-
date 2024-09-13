@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TTS Bot</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background-image: url("https://wallpapercave.com/wp/wp12310197.jpg");
+    background-repeat: no-repeat;
+    background-size: cover;
+  }
+  #circle {
+    width: 300px;
+    height: 300px; /* Adjusted height to match width for a perfect circle */
+    border-radius: 50%;
+    background-color: #f0f0f0;
+    position: relative;
+    margin: 50px auto;
+    overflow: hidden; /* Ensures the image stays within the circle */
+  }
+  #profile-image {
+    width: 100%; /* Ensures the image fills the circle */
+    height: auto; /* Allows the height to adjust while maintaining aspect ratio */
+    border-radius: 50%; /* Makes the image round */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    transition: filter 0.3s; /* Add transition for smooth hover effect */
+  }
+  #profile-image:hover {
+    filter: brightness(120%); /* Increase brightness on hover */
+  }
+  #glow {
+    position: absolute;
+    top: -50px; /* Adjust the position to be outside of the circle */
+    left: -50px; /* Adjust the position to be outside of the circle */
+    width: 400px; /* Adjusted width to be larger than the circle */
+    height: 400px; /* Adjusted height to be larger than the circle */
+    border-radius: 50%;
+    background-color: transparent;
+    box-shadow: 0 0 20px 10px rgba(0, 0, 255, 0.5), 
+                0 0 40px 20px rgba(0, 0, 255, 0.3),
+                0 0 60px 30px rgba(0, 0, 255, 0.1); /* Multiple shadows to create an animated effect */
+    animation: pulse 2s infinite;
+    display: none;
+  }
+  @keyframes pulse {
+    0% {
+      box-shadow: 0 0 20px 10px rgba(0, 0, 255, 0.5), 
+                  0 0 40px 20px rgba(0, 0, 255, 0.3),
+                  0 0 60px 30px rgba(0, 0, 255, 0.1);
+    }
+    50% {
+      box-shadow: 0 0 20px 20px rgba(0, 0, 255, 0.3), 
+                  0 0 40px 30px rgba(0, 0, 255, 0.1),
+                  0 0 60px 40px rgba(0, 0, 255, 0.05);
+    }
+    100% {
+      box-shadow: 0 0 20px 10px rgba(0, 0, 255, 0.5), 
+                  0 0 40px 20px rgba(0, 0, 255, 0.3),
+                  0 0 60px 30px rgba(0, 0, 255, 0.1);
+    }
+  }
+  /* Animation for status messages */
+  @keyframes vanish {
+    0% {
+      opacity: 1; /* Fully visible */
+    }
+    50% {
+      opacity: 0; /* Vanishing */
+    }
+    100% {
+      opacity: 1; /* Fully visible again */
+    }
+  }
+  #status {
+    animation: vanish 4s infinite; /* Apply the vanish animation */
+  }
+
+  /* Chat box styling */
+  #chat-box {
+    background-color: pink;
+    border-radius: 20px;
+    width: 80%;
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    text-align: left;
+    position: relative; /* Needed for positioning the send button */
+  }
+  #input-box {
+    border: none;
+    border-radius: 20px;
+    padding: 10px;
+    width: calc(100% - 50px); /* Adjusted width to accommodate the send button */
+    font-size: 16px;
+    margin-top: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    outline: none;
+  }
+  #send-button {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+  }
+  /* Hover effect for send button */
+  #send-button:hover {
+    filter: brightness(120%); /* Increase brightness on hover */
+  }
+</style>
+</head>
+<body>
+<div id="status" style="margin-top: 150px; font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; font-size: 35px;" >You are speaking...</div>
+<div id="circle">
+  <img id="profile-image" src="animewaifu.webp" alt="Your Image">
+  <div id="glow"></div>
+</div>
+
+<div id="chat-box">
+  <input type="text" id="input-box" placeholder="Type your message here...">
+  <img id="send-button" style="margin-top: 5px; margin-right: 5px;" src="paperairplane.png" alt="Send">
+</div>
+
+<script>
+  document.getElementById('send-button').addEventListener('click', function() {
+    var message = document.getElementById('input-box').value;
+    sendMessage(message);
+  });
+
+  function sendMessage(message) {
+    setStatus('Sending message...');
+    var fullText = encodeURIComponent(message); // Encode the message to handle special characters
+    var url = `https://api.kenliejugarap.com/ai/?text=${fullText}`;
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState === 4 && xhr.status === 200) {
+        var response = JSON.parse(xhr.responseText);
+        var text = response.text; // Extract the text from the response
+        convertTextToSpeech(text);
+      }
+    };
+    xhr.send();
+    disableInput(); // Disable input box and send button
+  }
+
+  function convertTextToSpeech(text) {
+    setStatus('Converting text to speech...');
+    var utterance = new SpeechSynthesisUtterance(text);
+    utterance.onend = function(event) {
+      console.log('Speech synthesis finished.');
+      setStatus('Ready');
+      enableInput(); // Enable input box and send button after speech synthesis is finished
+    };
+    utterance.onerror = function(event) {
+      console.error('Speech synthesis error:', event.error);
+      setStatus('Error: Speech synthesis failed.');
+      enableInput(); // Enable input box and send button after speech synthesis failed
+    };
+    speechSynthesis.speak(utterance);
+  }
+
+  function setStatus(status) {
+    document.getElementById('status').innerText = status;
+    if (status === 'Sending message...' || status === 'Converting text to speech...') {
+      document.getElementById('glow').style.display = 'block';
+    } else {
+      document.getElementById('glow').style.display = 'none';
+    }
+  }
+
+  function disableInput() {
+    document.getElementById('input-box').disabled = true;
+    document.getElementById('send-button').disabled = true;
+  }
+
+  function enableInput() {
+    document.getElementById('input-box').disabled = false;
+    document.getElementById('send-button').disabled = false;
+  }
+</script>
+</body>
+</html>
